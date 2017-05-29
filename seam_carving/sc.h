@@ -21,9 +21,8 @@ using namespace cv;
 
 
 template<typename T>
-inline T minene_above(Mat m, int i, int j, Mat pointer)
+inline T minene_above(Mat& m, int i, int j, Mat& pointer)
 {
-	assert(i>0);
 	T& ref = pointer.at<T>(i, j);
 
 	T minene = INT_MAX;
@@ -37,7 +36,7 @@ inline T minene_above(Mat m, int i, int j, Mat pointer)
 	return minene;
 }
 
-Mat cut1seam(Mat origin)
+void cut1seam(Mat& origin)
 {
 	Mat enemat = e1(origin);
 
@@ -89,15 +88,13 @@ Mat cut1seam(Mat origin)
 		}
 	}
 	origin = origin.colRange(0, cols-1);
-
-	return origin;
 }
 
 Mat scCut(Mat origin, int width)
 {
 	int cutwidth = origin.cols - width;
 	for (int i = 0; i < cutwidth; i++) {
-		origin = cut1seam(origin);
+		cut1seam(origin);
 		printf("%d lines cut\n", i);
 	}
 	return origin;

@@ -29,34 +29,24 @@ const Mat sobel_hor = (Mat_<float>(3, 3) <<
 	);
 const Mat sobel_ver = sobel_hor.t();
 
-Mat e1(Mat origin)
+Mat e1(const Mat& origin)
 {
-	Mat tmp;
-	origin.convertTo(tmp, CV_16UC3);
+	Mat channels[3];
+	split(origin, channels);
+	//assert(channels[0].type() == CV_8U);
+
+	Mat tmp = Mat::zeros(origin.size(), CV_16U);
+	for (int i = 0; i < 3; i++) {
+		channels[i].convertTo(channels[i], CV_16U);
+		tmp += channels[i];
+	}
 	Mat tmp2 = tmp.clone();
 	filter2D(tmp, tmp2, -1, sobel_ver);
 	filter2D(tmp, tmp, -1, sobel_hor);
 	tmp += tmp2;
 
-	Mat channels[3];
-	split(tmp, channels);
-	assert(channels[0].type() == CV_16U);
-	//for (int i = 0; i < 3; i++) {
-	//	cout<<channels[i]<<endl;
-	//	imshow("hello", channels[i]);
-	//	waitKey();
-	//}
-
-
-	int rows = origin.rows, cols = origin.cols;
-	Mat enemat = Mat::zeros(rows, cols, CV_32S);
-	for (int i = 0; i < rows; i++) {
-		for (int j = 0; j < cols; j++) {
-			for (int k = 0; k < 3; k++) {
-				enemat.at<int>(i, j) += channels[k].at<ushort>(i, j);
-			}
-		}
-	}
+	Mat enemat;
+	tmp.convertTo(enemat, CV_32S);
 
 	return enemat;
 }
