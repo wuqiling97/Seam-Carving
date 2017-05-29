@@ -78,8 +78,12 @@ Mat cut1seam(Mat origin)
 	//delete seam
 	for (int i = 0; i < rows; i++) {
 		int seami = seam[i];
-		//if(seami-1 >= 0)
-		//	origin.at<Vec3b>(i, seami-1) = 
+		//平滑图像
+		if(seami-1 >= 0)
+			origin.at<Vec3b>(i, seami-1) = (Vec3i(origin.at<Vec3b>(i, seami)) + Vec3i(origin.at<Vec3b>(i, seami-1)))/2;
+		if (seami + 1 < cols)
+			origin.at<Vec3b>(i, seami + 1) = (Vec3i(origin.at<Vec3b>(i, seami)) + Vec3i(origin.at<Vec3b>(i, seami + 1))) / 2;
+
 		for (int j = seami; j < cols-1; j++) {
 			origin.at<Vec3b>(i, j) = origin.at<Vec3b>(i, j+1);
 		}
