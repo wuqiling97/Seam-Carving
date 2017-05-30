@@ -33,16 +33,42 @@ int main()
 	}
 
 	cout<<"image size: "<<origin_img.size()<<endl;
-	cout<<"input the width you want to cut\n";
-	int w;
-	cin>>w;
+	bool cutwidth = true;
+	while (1) {
+		cout << "which side do you want to cut, height or width? <h/w>\n";
+		string side;
+		cin >> side;
+		if (side == "w") {
+			cutwidth = true;
+			break;
+		}
+		else if (side == "h") {
+			cutwidth = false;
+			break;
+		}
+		else
+			cout << "invalid, input again\n";
+	}
+
+	int len;
+	while (1) {
+		cout << "input the length you want to cut to\n";
+		cin >> len;
+		if(cutwidth==true && len>=origin_img.cols ||
+			cutwidth==false && len>=origin_img.rows)
+			cout<<"invalid length\n";
+		else {
+			break;
+		}
+	}
 
 	const string winname = "hello";
 	namedWindow(winname, CV_WINDOW_AUTOSIZE);
 
-	Mat res_img = scCut(origin_img, w);
+	Mat res_img = scCut(origin_img, len, cutwidth);
 
 	imshow(winname, res_img);
+	imwrite("images/result.png", res_img);
 
 	waitKey();
 }

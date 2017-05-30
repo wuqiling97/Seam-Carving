@@ -90,22 +90,22 @@ void cut1seam(Mat& origin)
 	origin = origin.colRange(0, cols-1);
 }
 
-Mat scCut(Mat origin, int width)
+Mat scCut(Mat origin, int len, bool cutwidth=true)
 {
-	int cutwidth = origin.cols - width;
-	for (int i = 0; i < cutwidth; i++) {
-		cut1seam(origin);
+	int cutlen;
+	Mat ret = origin;
+	if (cutwidth) {
+		cutlen = origin.cols - len;
+	} else {
+		cutlen = origin.rows - len;
+		ret = origin.t();
+	}
+	for (int i = 1; i <= cutlen; i++) {
+		cut1seam(ret);
 		printf("%d lines cut\n", i);
 	}
-	return origin;
-}
-
-Mat test(Mat origin, int w)
-{
-	Size s = origin.size();
-	cout<<s.width<<' '<<s.height<<endl;
-	Mat tmp = origin.clone();
-	filter2D(origin, tmp, -1, sobel_hor);
-	filter2D(origin, origin, -1, sobel_ver);
-	return tmp+origin;
+	if(cutwidth)
+		return ret;
+	else
+		return ret.t();
 }
