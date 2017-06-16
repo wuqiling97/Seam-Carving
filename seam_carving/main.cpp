@@ -16,12 +16,20 @@ using std::cin;
 using std::string;
 using namespace cv;
 
+#define DEBUG
+
 int main()
 {
 	string imgname;
 	std::ifstream fin("imgname.txt");
 	fin>>imgname;
 	cout<<imgname<<"|\n";
+
+#ifdef DEBUG
+	auto& uin = fin;
+#else
+	auto& uin = cin;
+#endif
 
 	Mat origin_img = imread(imgname, CV_LOAD_IMAGE_COLOR);
 	assert(origin_img.type()==CV_8UC3);
@@ -37,7 +45,7 @@ int main()
 	while (1) {
 		cout << "which side do you want to cut, height or width? <h/w>\n";
 		string side;
-		cin >> side;
+		uin >> side;
 		if (side == "w") {
 			cutwidth = true;
 			break;
@@ -53,7 +61,7 @@ int main()
 	int len;
 	while (1) {
 		cout << "input the length you want to cut to\n";
-		cin >> len;
+		uin >> len;
 		if(cutwidth==true && len>=origin_img.cols ||
 			cutwidth==false && len>=origin_img.rows)
 			cout<<"invalid length\n";

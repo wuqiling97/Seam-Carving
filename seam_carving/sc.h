@@ -38,7 +38,13 @@ inline T minene_above(Mat& m, int i, int j, Mat& pointer)
 
 void cut1seam(Mat& origin)
 {
-	Mat enemat = e1(origin);
+	Mat enemat = sobel_energy(origin);
+
+	Mat showmat;
+	enemat /= origin.channels();
+	enemat.convertTo(showmat, CV_8U);
+	imshow("hello", showmat);
+	waitKey();
 
 	int rows = enemat.rows, cols = enemat.cols;
 	//指向上一行被选中的能量最小点
@@ -51,10 +57,10 @@ void cut1seam(Mat& origin)
 
 	//col with minimun energy at last row
 	int minene_col = 0;
-	int tmp = INT_MAX;
+	int minene = INT_MAX;
 	for (int j = 0; j < cols; j++) {
-		if (enemat.at<int>(rows - 1, j) < tmp) {
-			tmp = enemat.at<int>(rows-1, j);
+		if (enemat.at<int>(rows - 1, j) < minene) {
+			minene = enemat.at<int>(rows-1, j);
 			minene_col = j;
 		}
 	}

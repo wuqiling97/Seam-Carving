@@ -29,24 +29,41 @@ const Mat sobel_hor = (Mat_<float>(3, 3) <<
 	);
 const Mat sobel_ver = sobel_hor.t();
 
-Mat e1(const Mat& origin)
+
+Mat merge_channels(const Mat& input)
 {
-	Mat channels[3];
-	split(origin, channels);
+	std::vector<Mat> channels(input.channels());
+	split(input, channels);
 	//assert(channels[0].type() == CV_8U);
 
-	Mat tmp = Mat::zeros(origin.size(), CV_16U);
-	for (int i = 0; i < 3; i++) {
-		channels[i].convertTo(channels[i], CV_16U);
-		tmp += channels[i];
+	//fileter2D  只接受<=16bit int
+	Mat ret = Mat::zeros(input.size(), CV_16U);
+	for (Mat i: channels) {
+		i.convertTo(i, CV_16U);
+		ret += i;
 	}
+	return ret;
+}
+
+
+Mat sobel_energy(const Mat& input)
+{
+	Mat tmp = merge_channels(input);
 	Mat tmp2 = tmp.clone();
-	filter2D(tmp, tmp2, -1, sobel_ver);
-	filter2D(tmp, tmp, -1, sobel_hor);
+
+	Sobel(tmp, tmp2, -1, 1, 0, 3);
+	Sobel(tmp, tmp, -1, 0, 1, 3);
 	tmp += tmp2;
 
 	Mat enemat;
 	tmp.convertTo(enemat, CV_32S);
 
 	return enemat;
+}
+
+Mat laplace_energy(const Mat& input)
+{
+	Mat tmp = merge_channels(input);
+	Laplacian(tmp, tmp, -1, 3);
+	return tmp;
 }
