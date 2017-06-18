@@ -75,7 +75,7 @@ int main()
 	int len;
 	getarg(cutwidth, len, uin, origin_img);
 
-	Mat res_img = scAdd(origin_img, e1, len, cutwidth);
+	Mat res_img = scAdd(origin_img, sobel_energy, len, cutwidth);
 
 	const string winname = "hello";
 	namedWindow(winname, CV_WINDOW_AUTOSIZE);

@@ -36,7 +36,7 @@ inline T minene_above(const Mat& m, int i, int j, Mat& pointer)
 
 	T minene = INT_MAX;
 	int tmp = min(j+1, m.cols-1);
-	for (int col = max(j - 1, 0); col < tmp; col++) {
+	for (int col = max(j - 1, 0); col <= tmp; col++) {
 		if (m.at<T>(i-1, col) < minene) {
 			minene = m.at<T>(i-1, col);
 			ref = col;
