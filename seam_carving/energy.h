@@ -21,13 +21,19 @@ using namespace cv;
 typedef std::function<Mat(const Mat&)> GradOperator;
 
 template <typename vec>
-double RGBlength(const vec& v)
+int RGBSquare(const vec& v)
 {
 	int sum = 0;
 	for (int i = 0; i < 3; i++) {
 		sum += v[i] * v[i];
 	}
-	return sqrt(sum);
+	return sum;
+}
+
+template <typename vec>
+double RGBlength(const vec& v)
+{
+	return sqrt(RGBSquare(v));
 }
 
 template <typename vec>
@@ -108,8 +114,18 @@ Mat scharr_energy(const Mat& input)
 
 Mat laplace_energy(const Mat& input)
 {
-	Mat tmp = add_channels(input);
+	Mat tmp;
+	input.convertTo(tmp, -1);
 	Laplacian(tmp, tmp, -1, 3);
-	tmp.convertTo(tmp, CV_32S);
-	return tmp;
+	Mat ene = Mat(tmp.size(), CV_32S);
+	for (int i = 0; i < ene.rows; i++) {
+		for (int j = 0; j < ene.cols; j++) {
+			ene.at<int>(i, j) = int(RGBlength(tmp.at<Vec3b>(i, j)));
+		}
+	}
+	
+	/*Mat ene = add_channels(input);
+	Laplacian(ene, ene, -1, 3);
+	ene.convertTo(ene, CV_32S);*/
+	return ene;
 }
