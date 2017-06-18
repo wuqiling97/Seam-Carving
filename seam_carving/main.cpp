@@ -18,6 +18,34 @@ using namespace cv;
 
 #define DEBUG
 
+void getarg(bool& cutwidth, int& cutlen, std::istream& in, Mat& img)
+{
+	while (1) {
+		cout << "which side do you want to cut, height or width? <h/w>\n";
+		string side;
+		in >> side;
+		if (side == "w") {
+			cutwidth = true;
+			break;
+		} else if (side == "h") {
+			cutwidth = false;
+			break;
+		} else
+			cout << "invalid, input again\n";
+	}
+
+	while (1) {
+		cout << "input the length you want to cut to\n";
+		in >> cutlen;
+		if (cutwidth == true && cutlen >= img.cols ||
+			cutwidth == false && cutlen >= img.rows)
+			cout << "invalid length\n";
+		else {
+			break;
+		}
+	}
+}
+
 int main()
 {
 	string imgname;
@@ -42,33 +70,9 @@ int main()
 
 	cout<<"image size: "<<origin_img.size()<<endl;
 	bool cutwidth = true;
-	while (1) {
-		cout << "which side do you want to cut, height or width? <h/w>\n";
-		string side;
-		uin >> side;
-		if (side == "w") {
-			cutwidth = true;
-			break;
-		}
-		else if (side == "h") {
-			cutwidth = false;
-			break;
-		}
-		else
-			cout << "invalid, input again\n";
-	}
-
 	int len;
-	while (1) {
-		cout << "input the length you want to cut to\n";
-		uin >> len;
-		if(cutwidth==true && len>=origin_img.cols ||
-			cutwidth==false && len>=origin_img.rows)
-			cout<<"invalid length\n";
-		else {
-			break;
-		}
-	}
+
+	getarg(cutwidth, len, uin, origin_img);
 
 	const string winname = "hello";
 	namedWindow(winname, CV_WINDOW_AUTOSIZE);

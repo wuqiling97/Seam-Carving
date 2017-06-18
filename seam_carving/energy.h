@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <fstream>
 #include <cassert>
+#include <cmath>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
@@ -29,8 +30,23 @@ const Mat sobel_hor = (Mat_<float>(3, 3) <<
 	);
 const Mat sobel_ver = sobel_hor.t();
 
+double RGBlength(Vec3b v)
+{
+	int sum = 0;
+	for (int i = 0; i < 3; i++) {
+		sum += v[i] * v[i];
+	}
+	return sqrt(sum);
+}
 
-Mat merge_channels(const Mat& input)
+double RGBdistance(Vec3b a, Vec3b b)
+{
+	Vec3b d = a - b;
+	return RGBlength(d);
+}
+
+
+Mat add_channels(const Mat& input)
 {
 	std::vector<Mat> channels(input.channels());
 	split(input, channels);
@@ -48,7 +64,7 @@ Mat merge_channels(const Mat& input)
 
 Mat sobel_energy(const Mat& input)
 {
-	Mat tmp = merge_channels(input);
+	Mat tmp = add_channels(input);
 	Mat tmp2 = tmp.clone();
 
 	Sobel(tmp, tmp2, -1, 1, 0, 3);
@@ -63,7 +79,7 @@ Mat sobel_energy(const Mat& input)
 
 Mat laplace_energy(const Mat& input)
 {
-	Mat tmp = merge_channels(input);
+	Mat tmp = add_channels(input);
 	Laplacian(tmp, tmp, -1, 3);
 	return tmp;
 }
