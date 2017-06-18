@@ -18,17 +18,7 @@ using std::cin;
 using std::string;
 using namespace cv;
 
-const Mat blurmat = (Mat_<float>(3, 3) <<
-	1, 1, 1,
-	1, 1, 1,
-	1, 1, 1
-	) / 9;
-const Mat sobel_hor = (Mat_<float>(3, 3) <<
-	-1, 0, 1,
-	-2, 0, 2,
-	-1, 0, 1
-	);
-const Mat sobel_ver = sobel_hor.t();
+typedef std::function<Mat(const Mat&)> GradOperator;
 
 template <typename vec>
 double RGBlength(const vec& v)
@@ -75,8 +65,8 @@ Mat sobel_energy(const Mat& input)
 	Mat ene = Mat::zeros(input.size(), CV_32S);
 	for (int i = 0; i < ene.rows; i++) {
 		for (int j = 0; j < ene.cols; j++) {
-			ene.at<int>(i, j) = RGBlength(tmpx.at<Vec3s>(i, j)) + 
-				                RGBlength(tmpy.at<Vec3s>(i, j));
+			ene.at<int>(i, j) = int(RGBlength(tmpx.at<Vec3s>(i, j)) + 
+				                RGBlength(tmpy.at<Vec3s>(i, j)));
 		}
 	}
 
@@ -95,8 +85,8 @@ Mat scharr_energy(const Mat& input)
 	Mat ene = Mat::zeros(input.size(), CV_32S);
 	for (int i = 0; i < ene.rows; i++) {
 		for (int j = 0; j < ene.cols; j++) {
-			ene.at<int>(i, j) = RGBlength(tmpx.at<Vec3s>(i, j)) +
-				RGBlength(tmpy.at<Vec3s>(i, j));
+			ene.at<int>(i, j) = int(RGBlength(tmpx.at<Vec3s>(i, j)) +
+				                RGBlength(tmpy.at<Vec3s>(i, j)));
 		}
 	}
 

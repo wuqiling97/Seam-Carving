@@ -75,7 +75,7 @@ Seam getSeam(Mat& enemat)
 	return seam;
 }
 
-void cut1seam(Mat& origin, std::function<Mat(const Mat&)> gradop)
+void cut1seam(Mat& origin, GradOperator gradop)
 {
 	Mat enemat = gradop(origin);
 
@@ -112,7 +112,7 @@ void cut1seam(Mat& origin, std::function<Mat(const Mat&)> gradop)
 	origin = origin.colRange(0, origin.cols-1);
 }
 
-Mat scCut(Mat origin, std::function<Mat(const Mat&)> gradop, int len, bool cutwidth=true)
+Mat scCut(Mat origin, GradOperator gradop, int len, bool cutwidth=true)
 {
 	int cutlen;
 	Mat ret = origin;
