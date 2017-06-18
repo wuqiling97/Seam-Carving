@@ -23,7 +23,8 @@ using namespace cv;
 struct SeamPoint
 {
 	int row, col;
-	SeamPoint(int r, int c): row(r), col(c) { }
+	Vec3b color;
+	SeamPoint(int r, int c, Vec3b color): row(r), col(c), color(color) { }
 };
 
 typedef std::vector<SeamPoint> Seam;
@@ -44,7 +45,7 @@ inline T minene_above(const Mat& m, int i, int j, Mat& pointer)
 	return minene;
 }
 
-Seam getSeam(Mat& enemat)
+Seam getSeam(Mat& enemat, const Mat& img)
 {
 	int rows = enemat.rows, cols = enemat.cols;
 	//指向上一行被选中的能量最小点
@@ -69,7 +70,7 @@ Seam getSeam(Mat& enemat)
 	//seam[row] = col selected
 	Seam seam;
 	for (int i = rows - 1; i >= 0; i--) {
-		seam.push_back(SeamPoint(i, minene_col));
+		seam.push_back(SeamPoint(i, minene_col, img.at<Vec3b>(i, minene_col)));
 		minene_col = pointer.at<int>(i, minene_col);
 	}
 	return seam;
@@ -78,22 +79,23 @@ Seam getSeam(Mat& enemat)
 void cut1seam(Mat& origin, GradOperator gradop)
 {
 	Mat enemat = gradop(origin);
+	assert(enemat.type()==CV_32S);
 
-	//Mat showmat;
-	//enemat /= origin.channels();
-	//enemat.convertTo(showmat, CV_8U);
-	//imshow("hello", showmat);
-	//waitKey();
+	/*Mat showmat;
+	enemat /= origin.channels();
+	enemat.convertTo(showmat, CV_8U);
+	imshow("hello", showmat);
+	waitKey();*/
 
-	Seam seam = getSeam(enemat);
+	Seam seam = getSeam(enemat, origin);
 	
-	//for (int i = 0; i < rows; i++) {
-	//	origin.at<Vec3b>(i, seam[i]) = Vec3b(0, 0, 255);
-	//}
-	//imshow("hello", origin);
-	//waitKey();
+	/*for (int i = 0; i < rows; i++) {
+		origin.at<Vec3b>(i, seam[i]) = Vec3b(0, 0, 255);
+	}
+	imshow("hello", origin);
+	waitKey();*/
 
-	//delete seam
+	// delete seam
 	for (int i = 0; i < origin.rows; i++) {
 		const int& scol = seam[i].col; //seam column
 		const int& srow = seam[i].row;
@@ -122,6 +124,8 @@ Mat scCut(Mat origin, GradOperator gradop, int len, bool cutwidth=true)
 		cutlen = origin.rows - len;
 		ret = origin.t();
 	}
+	assert(len<origin.cols);
+	
 	for (int i = 1; i <= cutlen; i++) {
 		cut1seam(ret, gradop);
 		printf("%d lines cut\n", i);
@@ -132,18 +136,62 @@ Mat scCut(Mat origin, GradOperator gradop, int len, bool cutwidth=true)
 		return ret.t();
 }
 
-Mat scAdd(Mat origin, int len, bool addwidth = true)
+Mat addSeam(Mat& origin, GradOperator gradop, int addlen)
 {
-	int add;
+	Mat cutimg = origin.clone();
+	std::vector<Seam> seam_seq;
+
+	for (int n = 0; n < addlen; n++) {
+		Mat enemat = gradop(cutimg);
+		seam_seq.push_back(getSeam(enemat, cutimg));
+		const Seam& seam = seam_seq.back();
+		// delete seam
+		for (int i = 0; i < cutimg.rows; i++) {
+			const int& scol = seam[i].col; //seam column
+			const int& srow = seam[i].row;
+			for (int j = scol; j < cutimg.cols - 1; j++) {
+				cutimg.at<Vec3b>(srow, j) = cutimg.at<Vec3b>(srow, j + 1);
+			}
+		}
+		cutimg = cutimg.colRange(0, cutimg.cols - 1);
+
+		printf("%d lines cut\n", n+1);
+	}
+	cout<<"cut finished\n";
+
+	Mat isdelete = Mat::zeros(cutimg.rows, cutimg.cols+addlen, CV_8U);
+	Mat retimg;
+	cv::copyMakeBorder(cutimg, retimg, 0, 0, 0, 2*addlen, cv::BORDER_CONSTANT);
+	// 把addlen条seam加回来, 记录下被删过的点, 再加一遍
+	for (int n = addlen - 1; n >= 0; n--) {
+		const Seam& seam = seam_seq[n];
+		cutimg = retimg.colRange(0, cutimg.cols+1);
+		for (SeamPoint p : seam) {
+			// 移动像素, 为删去的像素提供空间
+			for (int j = cutimg.cols; j > p.col; j--) {
+				retimg.at<Vec3b>(p.row, j) = retimg.at<Vec3b>(p.row, j-1);
+			}
+			retimg.at<Vec3b>(p.row, p.col) = p.color;
+		}
+		printf("line %d add\n", n + 1);
+	}
+	cout<<"add seam finished\n";
+	return cutimg;
+}
+
+Mat scAdd(Mat origin, GradOperator gradop, int len, bool addwidth = true)
+{
+	// addlen: 裁剪/放大的像素数
+	int addlen;
 	Mat ret = origin;
 	if (addwidth) {
-		add = len - origin.cols;
+		addlen = len - origin.cols;
 	} else {
-		add = len - origin.rows;
+		addlen = len - origin.rows;
 		ret = origin.t();
 	}
-
-
+	assert(len>origin.cols);
+	addSeam(ret, gradop, addlen);
 
 	if(addwidth)
 		return ret;

@@ -78,7 +78,7 @@ int main()
 	const string winname = "hello";
 	namedWindow(winname, CV_WINDOW_AUTOSIZE);
 
-	Mat res_img = scCut(origin_img, sobel_energy, len, cutwidth);
+	Mat res_img = scAdd(origin_img, laplace_energy, len, cutwidth);
 
 	imshow(winname, res_img);
 	imwrite("images/result.png", res_img);
