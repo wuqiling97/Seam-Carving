@@ -75,11 +75,10 @@ int main()
 	int len;
 	getarg(cutwidth, len, uin, origin_img);
 
+	Mat res_img = scAdd(origin_img, scharr_energy, len, cutwidth);
+
 	const string winname = "hello";
 	namedWindow(winname, CV_WINDOW_AUTOSIZE);
-
-	Mat res_img = scAdd(origin_img, laplace_energy, len, cutwidth);
-
 	imshow(winname, res_img);
 	imwrite("images/result.png", res_img);
 
