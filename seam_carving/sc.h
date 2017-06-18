@@ -40,11 +40,11 @@ void cut1seam(Mat& origin)
 {
 	Mat enemat = sobel_energy(origin);
 
-	Mat showmat;
-	enemat /= origin.channels();
-	enemat.convertTo(showmat, CV_8U);
-	imshow("hello", showmat);
-	waitKey();
+	//Mat showmat;
+	//enemat /= origin.channels();
+	//enemat.convertTo(showmat, CV_8U);
+	//imshow("hello", showmat);
+	//waitKey();
 
 	int rows = enemat.rows, cols = enemat.cols;
 	//指向上一行被选中的能量最小点
@@ -111,6 +111,25 @@ Mat scCut(Mat origin, int len, bool cutwidth=true)
 		printf("%d lines cut\n", i);
 	}
 	if(cutwidth)
+		return ret;
+	else
+		return ret.t();
+}
+
+Mat scAdd(Mat origin, int len, bool addwidth = true)
+{
+	int add;
+	Mat ret = origin;
+	if (addwidth) {
+		add = len - origin.cols;
+	} else {
+		add = len - origin.rows;
+		ret = origin.t();
+	}
+
+
+
+	if(addwidth)
 		return ret;
 	else
 		return ret.t();

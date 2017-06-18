@@ -30,7 +30,8 @@ const Mat sobel_hor = (Mat_<float>(3, 3) <<
 	);
 const Mat sobel_ver = sobel_hor.t();
 
-double RGBlength(Vec3b v)
+template <typename vec>
+double RGBlength(const vec& v)
 {
 	int sum = 0;
 	for (int i = 0; i < 3; i++) {
@@ -39,9 +40,10 @@ double RGBlength(Vec3b v)
 	return sqrt(sum);
 }
 
-double RGBdistance(Vec3b a, Vec3b b)
+template <typename vec>
+double RGBdistance(const vec& a, const vec& b)
 {
-	Vec3b d = a - b;
+	vec d = a - b;
 	return RGBlength(d);
 }
 
@@ -64,17 +66,41 @@ Mat add_channels(const Mat& input)
 
 Mat sobel_energy(const Mat& input)
 {
-	Mat tmp = add_channels(input);
-	Mat tmp2 = tmp.clone();
+	// 先计算导数, 后计算平方和的根(长度), 再相加
+	Mat tmpx, tmpy;
+	input.convertTo(tmpx, CV_16UC3);
+	input.convertTo(tmpy, CV_16UC3);
+	Sobel(tmpx, tmpx, -1, 1, 0, 3);
+	Sobel(tmpy, tmpy, -1, 0, 1, 3);
+	Mat ene = Mat::zeros(input.size(), CV_32S);
+	for (int i = 0; i < ene.rows; i++) {
+		for (int j = 0; j < ene.cols; j++) {
+			ene.at<int>(i, j) = RGBlength(tmpx.at<Vec3s>(i, j)) + 
+				                RGBlength(tmpy.at<Vec3s>(i, j));
+		}
+	}
 
-	Sobel(tmp, tmp2, -1, 1, 0, 3);
-	Sobel(tmp, tmp, -1, 0, 1, 3);
-	tmp += tmp2;
+	return ene;
+}
 
-	Mat enemat;
-	tmp.convertTo(enemat, CV_32S);
+Mat scharr_energy(const Mat& input)
+{
+	// 先计算导数, 后计算平方和的根(长度), 再相加
+	Mat tmpx, tmpy;
+	input.convertTo(tmpx, CV_16UC3);
+	input.convertTo(tmpy, CV_16UC3);
+	Scharr(tmpx, tmpx, -1, 1, 0);
+	Scharr(tmpy, tmpy, -1, 0, 1);
+	
+	Mat ene = Mat::zeros(input.size(), CV_32S);
+	for (int i = 0; i < ene.rows; i++) {
+		for (int j = 0; j < ene.cols; j++) {
+			ene.at<int>(i, j) = RGBlength(tmpx.at<Vec3s>(i, j)) +
+				RGBlength(tmpy.at<Vec3s>(i, j));
+		}
+	}
 
-	return enemat;
+	return ene;
 }
 
 Mat laplace_energy(const Mat& input)

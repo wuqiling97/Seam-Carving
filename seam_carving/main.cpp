@@ -37,41 +37,41 @@ void getarg(bool& cutwidth, int& cutlen, std::istream& in, Mat& img)
 	while (1) {
 		cout << "input the length you want to cut to\n";
 		in >> cutlen;
-		if (cutwidth == true && cutlen >= img.cols ||
+		break;
+		/*if (cutwidth == true && cutlen >= img.cols ||
 			cutwidth == false && cutlen >= img.rows)
 			cout << "invalid length\n";
 		else {
 			break;
-		}
+		}*/
 	}
 }
 
 int main()
 {
 	string imgname;
-	std::ifstream fin("imgname.txt");
-	fin>>imgname;
-	cout<<imgname<<"|\n";
 
 #ifdef DEBUG
+	std::ifstream fin("imgname.txt");
 	auto& uin = fin;
 #else
 	auto& uin = cin;
 #endif
 
+	uin>>imgname;
+	cout<<imgname<<"|\n";
+
 	Mat origin_img = imread(imgname, CV_LOAD_IMAGE_COLOR);
 	assert(origin_img.type()==CV_8UC3);
-
 	if (origin_img.data == nullptr) {
 		cout<<"no such image";
 		system("pause");
 		return 0;
 	}
-
 	cout<<"image size: "<<origin_img.size()<<endl;
+
 	bool cutwidth = true;
 	int len;
-
 	getarg(cutwidth, len, uin, origin_img);
 
 	const string winname = "hello";
