@@ -53,6 +53,19 @@ Mat add_channels(const Mat& input)
 	return ret;
 }
 
+Mat e1(const Mat& input)
+{
+	Mat img_with_border;
+	copyMakeBorder(input, img_with_border, 1, 1, 1, 1, BORDER_REPLICATE);
+	Mat enemat = Mat(input.size(), CV_32S);
+	for (int i = 1; i <= input.rows; i++)
+		for (int j = 1; j <= input.cols; j++) {
+			int grad = RGBdistance(img_with_border.at<Vec3b>(i - 1, j), img_with_border.at<Vec3b>(i + 1, j))
+				+ RGBdistance(img_with_border.at<Vec3b>(i, j - 1), img_with_border.at<Vec3b>(i, j + 1));
+			enemat.at<int>(i-1, j-1) = grad;
+		}
+	return enemat;
+}
 
 Mat sobel_energy(const Mat& input)
 {
