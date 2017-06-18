@@ -97,5 +97,6 @@ Mat laplace_energy(const Mat& input)
 {
 	Mat tmp = add_channels(input);
 	Laplacian(tmp, tmp, -1, 3);
+	tmp.convertTo(tmp, CV_32S);
 	return tmp;
 }
