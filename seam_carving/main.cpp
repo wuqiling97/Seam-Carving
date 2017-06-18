@@ -19,7 +19,7 @@ using namespace cv;
 
 #define DEBUG
 
-void getarg(bool& cutwidth, int& cutlen, std::istream& in, Mat& img)
+void get_scinfo(bool& cutwidth, int& cutlen, bool& isadd, std::istream& in, Mat& img)
 {
 	while (1) {
 		cout << "which side do you want to cut, height or width? <h/w>\n";
@@ -35,23 +35,56 @@ void getarg(bool& cutwidth, int& cutlen, std::istream& in, Mat& img)
 			cout << "invalid, input again\n";
 	}
 
-	while (1) {
-		cout << "input the length you want to cut to\n";
-		in >> cutlen;
-		break;
-		/*if (cutwidth == true && cutlen >= img.cols ||
-			cutwidth == false && cutlen >= img.rows)
-			cout << "invalid length\n";
-		else {
-			break;
-		}*/
+	cout << "input the length you want to cut to\n";
+	in >> cutlen;
+	if (cutwidth == true && cutlen >= img.cols ||
+		cutwidth == false && cutlen >= img.rows) {
+		cout << "enlarge image\n";
+		isadd = true;
 	}
+	else {
+		cout<<"cut image\n";
+		isadd = false;
+	}
+}
+
+GradOperator getop(std::istream& in)
+{
+	string tmp;
+	in>>tmp;
+	while (1) {
+		if (tmp == "e1")
+			return e1;
+		else if (tmp == "sobel")
+			return sobel_energy;
+		else if (tmp == "laplace")
+			return laplace_energy;
+		else if (tmp == "scharr")
+			return scharr_energy;
+		else
+			cout << "invalid input";
+	}
+}
+
+Mat getimg(std::istream& in)
+{
+	string imgname;
+	in >> imgname;
+	cout << imgname << "|\n";
+
+	Mat origin_img = imread(imgname, CV_LOAD_IMAGE_COLOR);
+	assert(origin_img.type() == CV_8UC3);
+	if (origin_img.data == nullptr) {
+		cout << "no such image";
+		system("pause");
+		throw 1;
+	}
+	cout << "image size: " << origin_img.size() << endl;
+	return origin_img;
 }
 
 int main()
 {
-	string imgname;
-
 #ifdef DEBUG
 	std::ifstream fin("imgname.txt");
 	auto& uin = fin;
@@ -59,23 +92,18 @@ int main()
 	auto& uin = cin;
 #endif
 
-	uin>>imgname;
-	cout<<imgname<<"|\n";
-
-	Mat origin_img = imread(imgname, CV_LOAD_IMAGE_COLOR);
-	assert(origin_img.type()==CV_8UC3);
-	if (origin_img.data == nullptr) {
-		cout<<"no such image";
-		system("pause");
-		return 0;
-	}
-	cout<<"image size: "<<origin_img.size()<<endl;
-
-	bool cutwidth = true;
+	// get args
+	GradOperator gradop = getop(uin);
+	Mat origin_img = getimg(uin);
+	bool cutwidth = true, isadd;
 	int len;
-	getarg(cutwidth, len, uin, origin_img);
+	get_scinfo(cutwidth, len, isadd, uin, origin_img);
 
-	Mat res_img = scAdd(origin_img, sobel_energy, len, cutwidth);
+	Mat res_img;
+	if(isadd)
+		res_img = scAdd(origin_img, gradop, len, cutwidth);
+	else
+		res_img = scCut(origin_img, gradop, len, cutwidth);
 
 	const string winname = "hello";
 	namedWindow(winname, CV_WINDOW_AUTOSIZE);
