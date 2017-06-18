@@ -159,24 +159,42 @@ Mat addSeam(Mat& origin, GradOperator gradop, int addlen)
 	}
 	cout<<"cut finished\n";
 
-	Mat isdelete = Mat::zeros(cutimg.rows, cutimg.cols+addlen, CV_8U);
+	Mat isdelete = Mat::zeros(origin.size(), CV_8U);
 	Mat retimg;
-	cv::copyMakeBorder(cutimg, retimg, 0, 0, 0, 2*addlen, cv::BORDER_CONSTANT);
-	// 把addlen条seam加回来, 记录下被删过的点, 再加一遍
+	cv::copyMakeBorder(origin, retimg, 0, 0, 0, addlen, cv::BORDER_CONSTANT);
+
+	// 把addlen条seam加回来, 记录下被删过的点
 	for (int n = addlen - 1; n >= 0; n--) {
 		const Seam& seam = seam_seq[n];
-		cutimg = retimg.colRange(0, cutimg.cols+1);
+		int cols = cutimg.cols + addlen - n;
 		for (SeamPoint p : seam) {
-			// 移动像素, 为删去的像素提供空间
-			for (int j = cutimg.cols; j > p.col; j--) {
-				retimg.at<Vec3b>(p.row, j) = retimg.at<Vec3b>(p.row, j-1);
+			// 移动像素, 为删去的像素提供空间 // 没必要,只要记录被删过的像素即可
+			// 并且移动delete标记
+			for (int j = cols; j > p.col; j--) {
+				//retimg.at<Vec3b>(p.row, j) = retimg.at<Vec3b>(p.row, j-1);
+				isdelete.at<uchar>(p.row, j) = isdelete.at<uchar>(p.row, j-1);
 			}
-			retimg.at<Vec3b>(p.row, p.col) = p.color;
+			//retimg.at<Vec3b>(p.row, p.col) = p.color;
+			isdelete.at<uchar>(p.row, p.col) = true;
 		}
 		printf("line %d add\n", n + 1);
 	}
+
+	// 把记录下的点再加一遍
+	for (int i = 0; i < origin.rows; i++) {
+		int originp = origin.cols - 1;
+		// ret pointer 指向retimg的列
+		for (int retp = retimg.cols - 1; retp >= 0; retp++) {
+			retimg.at<Vec3b>(i, retp) = origin.at<Vec3b>(i, originp);
+			if(isdelete.at<uchar>(i, originp)==false)
+				originp--;
+		}
+		assert(originp==0);
+	}
+
 	cout<<"add seam finished\n";
-	return cutimg;
+	
+	return retimg;
 }
 
 Mat scAdd(Mat origin, GradOperator gradop, int len, bool addwidth = true)
