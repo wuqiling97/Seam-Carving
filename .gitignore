@@ -33,6 +33,7 @@
 
 #others
 .vs/
+.vscode/
 **/Debug/
 **/Release/
 images/

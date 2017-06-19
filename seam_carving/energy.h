@@ -114,7 +114,7 @@ Mat scharr_energy(const Mat& input)
 
 Mat laplace_energy(const Mat& input)
 {
-	Mat tmp;
+	/*Mat tmp;
 	input.convertTo(tmp, -1);
 	Laplacian(tmp, tmp, -1, 3);
 	Mat ene = Mat(tmp.size(), CV_32S);
@@ -122,10 +122,10 @@ Mat laplace_energy(const Mat& input)
 		for (int j = 0; j < ene.cols; j++) {
 			ene.at<int>(i, j) = int(RGBlength(tmp.at<Vec3b>(i, j)));
 		}
-	}
+	}*/
 	
-	/*Mat ene = add_channels(input);
+	Mat ene = add_channels(input);
 	Laplacian(ene, ene, -1, 3);
-	ene.convertTo(ene, CV_32S);*/
+	ene.convertTo(ene, CV_32S);
 	return ene;
 }
