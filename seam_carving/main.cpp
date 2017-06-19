@@ -99,14 +99,17 @@ int main()
 	int len;
 	get_scinfo(cutwidth, len, isadd, uin, origin_img);
 
+	WorkStation ws = WorkStation(origin_img, gradop);
+
 	Mat res_img;
 	if(isadd)
-		res_img = scAdd(origin_img, gradop, len, cutwidth);
-	else
-		res_img = scCut(origin_img, gradop, len, cutwidth);
+		res_img = ws.enlarge(len, cutwidth);
+	else {
+		res_img = ws.cut(len, cutwidth);
+		ws.showSeams(cutwidth);
+	}
 
 	const string winname = "hello";
-	namedWindow(winname, CV_WINDOW_AUTOSIZE);
 	imshow(winname, res_img);
 	imwrite("images/result.png", res_img);
 
