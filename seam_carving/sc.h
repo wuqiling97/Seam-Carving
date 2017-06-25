@@ -203,8 +203,8 @@ class WorkStation
 		int wcuttime = 0, hcuttime = 0;
 
 		for (int n = 0; n < tot_cutlen; n++) {
-			Mat vert_ene = gradop(origin); //w*h matrix, dtype: int
-			Mat hori_ene = gradop(origin.t()); //h*w matrix
+			Mat vert_ene = gradop(cutimg); //w*h matrix, dtype: int
+			Mat hori_ene = gradop(cutimg.t()); //h*w matrix
 			Seam vert_seam = get_seam(vert_ene, origin);
 			Seam hori_seam = get_seam(hori_ene, origin.t()); // 行列颠倒
 
@@ -216,16 +216,19 @@ class WorkStation
 
 			Mat tmp;
 			Seam* seam = nullptr;
+			bool cutwidth;
 			assert(wcuttime < wlen || hcuttime < hlen);
 			if ((vert_aveE < hori_aveE && wcuttime < wlen) || (vert_aveE >= hori_aveE && hcuttime == hlen)) {
 				tmp = cutimg;
 				seam = &vert_seam;
 				wcuttime++;
+				cutwidth = true;
 				printf("n: %d, width\n", n);
 			} else {
 				tmp = cutimg.t();
 				seam = &hori_seam;
 				hcuttime++;
+				cutwidth = false;
 				printf("n: %d, height\n", n);
 			}
 
@@ -237,6 +240,10 @@ class WorkStation
 					tmp.at<Vec3b>(srow, j) = tmp.at<Vec3b>(srow, j + 1);
 				}
 			}
+			if(cutwidth)
+				cutimg = cutimg.colRange(0, cutimg.cols-1);
+			else
+				cutimg = cutimg.rowRange(0, cutimg.rows-1);
 		}
 
 		return cutimg;
