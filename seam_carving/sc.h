@@ -25,6 +25,16 @@ struct SeamPoint
 	int row, col;
 	Vec3b color;
 	SeamPoint(int r, int c, Vec3b color): row(r), col(c), color(color) { }
+	cv::Point2i cvpoint() {
+		return cv::Point2i(col, row);
+	}
+	SeamPoint asswap() {
+		return SeamPoint(col, row, color);
+	}
+	SeamPoint& swap() {
+		std::swap(row, col);
+		return *this;
+	}
 };
 
 typedef std::vector<SeamPoint> Seam;
@@ -45,7 +55,7 @@ inline T minene_above(const Mat& m, int i, int j, Mat& pointer)
 	return minene;
 }
 
-Seam getSeam(Mat& enemat, const Mat& img)
+Seam get_seam(Mat& enemat, const Mat& img)
 {
 	int rows = enemat.rows, cols = enemat.cols;
 	//指向上一行被选中的能量最小点
@@ -76,6 +86,15 @@ Seam getSeam(Mat& enemat, const Mat& img)
 	return seam;
 }
 
+Seam get_horizon_seam(Mat& enemat, const Mat& img) {
+	Mat enemat_trans = enemat.t();
+	Seam seam = get_seam(enemat_trans, img.t());
+	for (SeamPoint& point : seam) {
+		std::swap(point.row, point.col);
+	}
+	return seam;
+}
+
 
 class WorkStation
 {
@@ -94,14 +113,8 @@ class WorkStation
 		imshow("hello", showmat);
 		waitKey();*/
 		
-		seamseq.push_back(getSeam(enemat, cutimg));
+		seamseq.push_back(get_seam(enemat, cutimg));
 		Seam& seam = seamseq.back();
-
-		/*for (int i = 0; i < rows; i++) {
-		cutimg.at<Vec3b>(i, seam[i]) = Vec3b(0, 0, 255);
-		}
-		imshow("hello", cutimg);
-		waitKey();*/
 
 		// delete seam
 		for (int i = 0; i < cutimg.rows; i++) {
@@ -125,12 +138,11 @@ class WorkStation
 	Mat addSeam(const Mat& origin, int addlen)
 	{
 		Mat cutimg = origin.clone();
-		std::vector<Seam> seam_seq;
 
 		for (int n = 0; n < addlen; n++) {
 			Mat enemat = gradop(cutimg);
-			seam_seq.push_back(getSeam(enemat, cutimg));
-			const Seam& seam = seam_seq.back();
+			seamseq.push_back(get_seam(enemat, cutimg));
+			const Seam& seam = seamseq.back();
 			// delete seam
 			for (int i = 0; i < cutimg.rows; i++) {
 				const int& scol = seam[i].col; //seam column
@@ -151,16 +163,14 @@ class WorkStation
 
 		// 把addlen条seam加回来, 记录下被删过的点
 		for (int n = addlen - 1; n >= 0; n--) {
-			const Seam& seam = seam_seq[n];
+			const Seam& seam = seamseq[n];
 			int cols = cutimg.cols + addlen - n;
 			for (SeamPoint p : seam) {
 				// 移动像素, 为删去的像素提供空间 // 没必要,只要记录被删过的像素即可
 				// 并且移动delete标记
 				for (int j = cols - 1; j > p.col; j--) {
-					//retimg.at<Vec3b>(p.row, j) = retimg.at<Vec3b>(p.row, j-1);
 					isdelete.at<uchar>(p.row, j) = isdelete.at<uchar>(p.row, j - 1);
 				}
-				//retimg.at<Vec3b>(p.row, p.col) = p.color;
 				isdelete.at<uchar>(p.row, p.col) = true;
 			}
 			printf("line %d add\n", n + 1);
@@ -187,6 +197,50 @@ class WorkStation
 		return retimg;
 	}
 
+	Mat bicut(const Mat& origin, int wlen, int hlen) {
+		int tot_cutlen = wlen + hlen;
+		Mat cutimg = origin.clone();
+		int wcuttime = 0, hcuttime = 0;
+
+		for (int n = 0; n < tot_cutlen; n++) {
+			Mat vert_ene = gradop(origin); //w*h matrix, dtype: int
+			Mat hori_ene = gradop(origin.t()); //h*w matrix
+			Seam vert_seam = get_seam(vert_ene, origin);
+			Seam hori_seam = get_seam(hori_ene, origin.t()); // 行列颠倒
+
+			// caculate average seam energy
+			int vert_minene = vert_ene.at<int>(vert_seam[0].cvpoint());
+			int hori_minene = hori_ene.at<int>(hori_seam[0].cvpoint());
+			double vert_aveE = vert_ene.at<int>(vert_seam[0].cvpoint()) / double(vert_seam.size());
+			double hori_aveE = hori_ene.at<int>(hori_seam[0].cvpoint()) / double(hori_seam.size());
+
+			Mat tmp;
+			Seam* seam = nullptr;
+			assert(wcuttime < wlen || hcuttime < hlen);
+			if ((vert_aveE < hori_aveE && wcuttime < wlen) || (vert_aveE >= hori_aveE && hcuttime == hlen)) {
+				tmp = cutimg;
+				seam = &vert_seam;
+				wcuttime++;
+				printf("n: %d, width\n", n);
+			} else {
+				tmp = cutimg.t();
+				seam = &hori_seam;
+				hcuttime++;
+				printf("n: %d, height\n", n);
+			}
+
+			// cut image
+			for (const SeamPoint& point: *seam) {
+				const int& scol = point.col; //seam column
+				const int& srow = point.row;
+				for (int j = scol; j < tmp.cols - 1; j++) {
+					tmp.at<Vec3b>(srow, j) = tmp.at<Vec3b>(srow, j + 1);
+				}
+			}
+		}
+
+		return cutimg;
+	}
 public:
 	WorkStation(Mat img, GradOperator gradoperator) :
 		origin(img), gradop(gradoperator)
@@ -226,6 +280,14 @@ public:
 			show = show.t();
 		imshow("red seam", show);
 		waitKey();
+	}
+
+	Mat bidirection_cut(int width, int height) {
+		seamseq.clear();
+		Mat ret = origin.clone();
+		assert(width<origin.cols && height<origin.rows);
+		
+		return bicut(ret, origin.cols-width, origin.rows-height);
 	}
 
 	Mat cut(int len, bool cutwidth = true)

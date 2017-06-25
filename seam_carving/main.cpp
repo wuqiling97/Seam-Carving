@@ -41,9 +41,8 @@ void get_scinfo(bool& cutwidth, int& cutlen, bool& isadd, std::istream& in, Mat&
 		cutwidth == false && cutlen >= img.rows) {
 		cout << "enlarge image\n";
 		isadd = true;
-	}
-	else {
-		cout<<"cut image\n";
+	} else {
+		cout << "cut image\n";
 		isadd = false;
 	}
 }
@@ -95,20 +94,62 @@ int main()
 	// get args
 	GradOperator gradop = getop(uin);
 	Mat origin_img = getimg(uin);
-	bool cutwidth = true, isadd;
-	int len;
-	get_scinfo(cutwidth, len, isadd, uin, origin_img);
+
+	enum Cuttype {HEIGHT, WIDTH, BOTH};
+	Cuttype cuttype;
+	bool isadd;
+	int len, len2;
+	//get_scinfo(cutwidth, len, isadd, uin, origin_img);
+
+	while (1) {
+		cout << "which side do you want to cut, height or width or both? <h/w/hw/wh>\n";
+		string side;
+		uin >> side;
+		if (side == "w") {
+			cuttype = WIDTH;
+			break;
+		} else if (side == "h") {
+			cuttype = HEIGHT;
+			break;
+		} else if (side == "wh" || side == "hw") {
+			cuttype = BOTH;
+			break;
+		} else
+			cout << "invalid, input again\n";
+	}
+
+	cout << "input the length you want to cut to\n";
+	uin >> len;
+	if (cuttype == BOTH) {
+		uin >> len2;
+	}
+	if (cuttype == WIDTH && len >= origin_img.cols ||
+		cuttype == HEIGHT && len >= origin_img.rows) {
+		cout << "enlarge image\n";
+		isadd = true;
+	} else if (cuttype != BOTH) {
+		cout << "cut image\n";
+		isadd = false;
+	} else {
+		cout<<"bidirection cut\n";
+		isadd = false;
+	}
+
 
 	WorkStation ws = WorkStation(origin_img, gradop);
 
 	Mat res_img;
-	if(isadd)
-		res_img = ws.enlarge(len, cutwidth);
-	else {
-		res_img = ws.cut(len, cutwidth);
-		ws.showSeams(cutwidth);
+	if (isadd) {
+		res_img = ws.enlarge(len, cuttype);
+		ws.showSeams(cuttype);
+	} else if(cuttype != BOTH) {
+		res_img = ws.cut(len, cuttype);
+		ws.showSeams(cuttype);
+	} else {
+		cout<<len<<' '<<len2<<endl;
+		//system("pause");
+		res_img = ws.bidirection_cut(len, len2);
 	}
-
 	const string winname = "hello";
 	imshow(winname, res_img);
 	imwrite("images/result.png", res_img);
