@@ -52,6 +52,7 @@ GradOperator getop(std::istream& in)
 	string tmp;
 	in>>tmp;
 	while (1) {
+		cout<<tmp<<endl;
 		if (tmp == "e1")
 			return e1;
 		else if (tmp == "sobel")
@@ -82,7 +83,7 @@ Mat getimg(std::istream& in)
 	return origin_img;
 }
 
-int main()
+int main(int argc, char** argv)
 {
 #ifdef DEBUG
 	std::ifstream fin("imgname.txt");
@@ -139,12 +140,16 @@ int main()
 	WorkStation ws = WorkStation(origin_img, gradop);
 
 	Mat res_img;
+	string seampath = "";
+	if(argc==3)
+		seampath = argv[2];
+
 	if (isadd) {
 		res_img = ws.enlarge(len, cuttype);
-		ws.showSeams(cuttype);
+		ws.showSeams(cuttype, seampath);
 	} else if(cuttype != BOTH) {
 		res_img = ws.cut(len, cuttype);
-		ws.showSeams(cuttype);
+		ws.showSeams(cuttype, seampath);
 	} else {
 		cout<<len<<' '<<len2<<endl;
 		//system("pause");
@@ -152,7 +157,10 @@ int main()
 	}
 	const string winname = "hello";
 	imshow(winname, res_img);
-	imwrite("images/result.png", res_img);
+	string storepath = "images/result.png";
+	if(argc==3)
+		storepath = argv[1];
+	imwrite(storepath, res_img);
 
 	waitKey();
 }

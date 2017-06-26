@@ -253,7 +253,7 @@ public:
 		origin(img), gradop(gradoperator)
 	{}
 
-	void showSeams(bool iswidth) {
+	void showSeams(bool iswidth, string path="") {
 		Mat originimg = origin.clone();
 		if(!iswidth)
 			originimg = originimg.t();
@@ -286,6 +286,8 @@ public:
 		if(!iswidth)
 			show = show.t();
 		imshow("red seam", show);
+		if(path!="")
+			imwrite(path, show);
 		waitKey();
 	}
 
